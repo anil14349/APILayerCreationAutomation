@@ -2,9 +2,11 @@ package com.util;
 
 import java.util.Map;
 
+import com.jsoniter.any.Any;
+
 public class APIRequest {
     
-    private Map<String,Object> requestBody;
+    private Any requestBody;
     private Map<String,Object> uriParams;
     private Map<String,Object> queryParams;
     private Map<String,Object> headerParams;
@@ -55,14 +57,14 @@ public class APIRequest {
     /**
      * @return Map<String,Object> return the requestBody
      */
-    public Map<String,Object> getRequestBody() {
+    public Any getRequestBody() {
         return requestBody;
     }
 
     /**
      * @param requestBody the requestBody to set
      */
-    public void setRequestBody(Map<String,Object> requestBody) {
+    public void setRequestBody(Any requestBody) {
         this.requestBody = requestBody;
     }
 

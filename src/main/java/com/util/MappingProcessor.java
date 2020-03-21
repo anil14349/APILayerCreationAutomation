@@ -1,6 +1,11 @@
 package com.util;
 
 import java.util.Map;
+
+import com.jsoniter.any.Any;
+
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -19,18 +24,16 @@ public class MappingProcessor {
     private List<String> resFieldstoExtract;
 
     public MappingProcessor(APIRequest request, Map<String, Object> mongoData) {
-
         this.sequence = (int) mongoData.get("sequence");
         this.httpMethod = (String) mongoData.get("httpMethod");
         this.requestBody = (String) mongoData.get("requestBody");
         this.protocal = (String) mongoData.get("protocal");
         this.port = (int) mongoData.get("port");
-        this.uriParmsMappings = mapMongoData(request, (Map<String, String>) mongoData.get("uriParmsMappings"));
-        this.queryParamsMappings = mapMongoData(request, (Map<String, String>) mongoData.get("queryParamsMappings"));
-        this.headerParmsMappings = mapMongoData(request, (Map<String, String>) mongoData.get("headerParmsMappings"));
-        this.requestBobyMappings = mapMongoData(request, (Map<String, String>) mongoData.get("requestBobyMappings"));
+        this.uriParmsMappings = mapMongoData(request, ((Any) mongoData.get("uriParmsMappings")).asMap());
+        this.queryParamsMappings = mapMongoData(request, ((Any) mongoData.get("queryParamsMappings")).asMap());
+        this.headerParmsMappings = mapMongoData(request, ((Any) mongoData.get("headerParmsMappings")).asMap());
+        this.requestBobyMappings = mapMongoData(request, ((Any) mongoData.get("requestBobyMappings")).asMap());
         this.resFieldstoExtract = (List<String>) mongoData.get("resFieldstoExtract");
-
     }
 
     /**
@@ -187,26 +190,36 @@ public class MappingProcessor {
         this.resFieldstoExtract = resFieldstoExtract;
     }
 
-    private Map<String, String> mapMongoData(APIRequest reqData, Map<String, String> dbData) {
+    private Map<String, String> mapMongoData(APIRequest reqData, Map<String, Any> map) {
 
         Map<String, String> hMap = new HashMap<String, String>();
-        Object value = null;
-        for (String key : dbData.keySet()) {
-            String dbVal = (String) dbData.get(key);
-
+        for (String key : map.keySet()) {
+            String dbVal = map.get(key).as(String.class);
+            Object value = "";
             if (dbVal.startsWith("header")) {
-                value = reqData.getHeaderParams().get("dbVal");
+                value = retriveMapValue(reqData.getHeaderParams(),dbVal);
             } else if (dbVal.startsWith("queryParam")) {
-                value = reqData.getQueryParams().get("dbVal");
-            } else if (dbVal.startsWith("request")) {
-                value = reqData.getRequestBody().get("dbVal");
+                value = retriveMapValue(reqData.getQueryParams(),dbVal);
+            }else if (dbVal.startsWith("uriParam")) {
+                value = retriveMapValue(reqData.getUriParams(),dbVal);
+            }else if (dbVal.startsWith("request")) {
+                value = reqData.getRequestBody().get(dbVal.substring(dbVal.indexOf(".") + 1)).as(String.class);
             }
-            if(value != null) // value conversion needs enhancement for other data types
+
+            if(!StringUtils.isAnyEmpty(value.toString())) { // value conversion needs enhancement for other data types
                 hMap.put(key, (String) value);
-
+            }
         }
-
         return hMap;
+    }
+
+    private String retriveMapValue(Map map,String key){
+       String iKey = key.substring(key.indexOf(".") + 1);
+       String value="";
+        if(map.containsKey(iKey)){
+            return map.get(iKey).toString();
+        }
+        return value;
     }
 
 }
